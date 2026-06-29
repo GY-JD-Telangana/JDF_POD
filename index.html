@@ -3,155 +3,712 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Courier POD Update Portal</title>
+    <title>John Deere - Courier Dispatch Portal</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 30px; background-color: #f5f7fb; color: #333; }
-        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        h2 { margin-top: 0; color: #1e3a8a; }
-        .filter-section { background: #e0e7ff; padding: 15px; border-radius: 6px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; }
-        select { padding: 8px 12px; border-radius: 4px; border: 1px solid #cbd5e1; font-size: 16px; min-width: 200px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; }
-        th { background-color: #0f172a; color: white; }
-        tr:hover { background-color: #f8fafc; }
-        input[type="text"], input[type="date"] { padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 14px; }
-        button { background-color: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        button:hover { background-color: #1d4ed8; }
-        button:disabled { background-color: #94a3b8; cursor: not-allowed; }
-        .loading { font-style: italic; color: #64748b; }
+        /* Modern CSS Variables based on Deere Brand Standards */
+        :root {
+            --deere-green: #367C2B;
+            --deere-yellow: #FFDE00;
+            --deere-dark: #111827;
+            --deere-bg: #f3f4f6;
+            --deere-card-bg: #ffffff;
+            --border-color: #e5e7eb;
+            --text-main: #1f2937;
+            --text-secondary: #4b5563;
+        }
+
+        body {
+            font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+            margin: 0;
+            background-color: var(--deere-bg);
+            color: var(--text-main);
+            min-height: 100vh;
+        }
+
+        /* Premium Header Styling */
+        header {
+            background-color: var(--deere-dark);
+            border-bottom: 5px solid var(--deere-yellow);
+            padding: 15px 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        .brand-container {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .logo-img {
+            height: 48px;
+            object-fit: contain;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+        }
+
+        .portal-title h1 {
+            color: #ffffff;
+            font-size: 1.5rem;
+            margin: 0;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+        }
+
+        .portal-title p {
+            color: #9ca3af;
+            font-size: 0.85rem;
+            margin: 2px 0 0 0;
+        }
+
+        .sync-badge {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .sync-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #10b981;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1300px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        /* Search Section Card */
+        .search-card {
+            background-color: var(--deere-card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            border: 1px solid var(--border-color);
+            padding: 24px;
+            margin-bottom: 24px;
+            position: relative;
+        }
+
+        .search-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--deere-dark);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .search-control-wrapper {
+            position: relative;
+            max-width: 500px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .fuzzy-input-container {
+            position: relative;
+            flex-grow: 1;
+        }
+
+        .search-input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 12px 16px;
+            font-size: 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            outline: none;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .search-input:focus {
+            border-color: var(--deere-green);
+            box-shadow: 0 0 0 3px rgba(54, 124, 43, 0.15);
+        }
+
+        /* Custom Dropdown Suggestions */
+        .suggestions-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            max-height: 250px;
+            overflow-y: auto;
+            z-index: 100;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .suggestion-item {
+            padding: 10px 16px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: background 0.15s;
+        }
+
+        .suggestion-item:hover, .suggestion-item.active {
+            background-color: #f3f4f6;
+            color: var(--deere-green);
+            font-weight: 600;
+        }
+
+        .no-results {
+            padding: 10px 16px;
+            color: #9ca3af;
+            font-style: italic;
+        }
+
+        /* Refresh Button */
+        .btn-refresh {
+            background-color: var(--deere-dark);
+            color: white;
+            border: none;
+            padding: 0 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.15s;
+        }
+
+        .btn-refresh:hover {
+            background-color: #1f2937;
+        }
+
+        /* Selected Badge UI */
+        .selected-tbe-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background-color: rgba(54, 124, 43, 0.1);
+            border: 1px solid rgba(54, 124, 43, 0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            margin-top: 15px;
+            font-weight: 600;
+            color: var(--deere-green);
+        }
+
+        .clear-selection-btn {
+            background: none;
+            border: none;
+            color: #ef4444;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1.1rem;
+            padding: 0;
+            display: flex;
+            align-items: center;
+        }
+
+        /* Empty State / Welcome Screen */
+        .empty-view-card {
+            background: white;
+            border-radius: 12px;
+            border: 1px dashed #cbd5e1;
+            padding: 60px 20px;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        .empty-view-card svg {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 16px;
+            color: #9ca3af;
+        }
+
+        /* Data Display Card & Table Styles */
+        .table-card {
+            background-color: var(--deere-card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            display: none;
+        }
+
+        .table-header-bar {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border-color);
+            background-color: #fcfcfc;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-header-title {
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: var(--deere-dark);
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f8fafc;
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 14px 20px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        td {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.95rem;
+            vertical-align: middle;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover {
+            background-color: #f8fafc;
+        }
+
+        /* Inputs in Table Rows */
+        .table-input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 8px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .table-input:focus {
+            border-color: var(--deere-green);
+            box-shadow: 0 0 0 2px rgba(54, 124, 43, 0.1);
+        }
+
+        /* Beautiful Dynamic Button Styling */
+        .btn-update {
+            background-color: #e5e7eb;
+            color: #9ca3af;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: not-allowed;
+            transition: all 0.2s ease-in-out;
+            width: 100%;
+            font-size: 0.9rem;
+        }
+
+        .btn-update.active {
+            background-color: var(--deere-green);
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(54, 124, 43, 0.2);
+        }
+
+        .btn-update.active:hover {
+            background-color: #2b6122;
+        }
+
+        /* Loader Animation */
+        .loader-container {
+            display: none;
+            text-align: center;
+            padding: 40px 0;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(54, 124, 43, 0.1);
+            border-top: 4px solid var(--deere-green);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 12px auto;
+        }
+
+        /* Custom Notification Toast */
+        .toast-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast {
+            background-color: var(--deere-dark);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 8px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+            border-left: 5px solid var(--deere-yellow);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 300px;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success {
+            border-left-color: #10b981;
+        }
+
+        .toast.error {
+            border-left-color: #ef4444;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); opacity: 0.5; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.5; }
+        }
     </style>
 </head>
 <body>
 
+<!-- Header Banner -->
+<header>
+    <div class="brand-container">
+        <!-- John Deere Official Header Asset -->
+        <img src="https://myfinancialaccounts.deere.com/assets/john-deere-btn-nDVN4kds.png" alt="John Deere Logo" class="logo-img">
+        <div class="portal-title">
+            <h1>Courier Dispatch Portal</h1>
+            <p>Pending Document dispatch Dashboard</p>
+        </div>
+    </div>
+    <div class="sync-badge">
+        <div class="sync-dot"></div>
+        <span>Excel Active Connection</span>
+    </div>
+</header>
+
 <div class="container">
-    <h2>Courier Dispatch Update Portal</h2>
-    
-    <div class="filter-section">
-        <label for="tbeFilter"><strong>Filter by TBE Name:</strong></label>
-        <select id="tbeFilter" onchange="filterData()" disabled>
-            <option value="">Loading TBE Names...</option>
-        </select>
-        <button onclick="fetchData()">🔄 Refresh Data</button>
+
+    <!-- Search Section -->
+    <div class="search-card">
+        <div class="search-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <span>Assign Dispatch by TBE Name</span>
+        </div>
+        <div class="search-control-wrapper">
+            <div class="fuzzy-input-container">
+                <input type="text" id="fuzzySearchInput" class="search-input" placeholder="Type to search TBE Name..." autocomplete="off">
+                <div id="suggestionsDropdown" class="suggestions-dropdown"></div>
+            </div>
+            <button class="btn-refresh" onclick="fetchData()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>
+                <span>Sync</span>
+            </button>
+        </div>
+
+        <!-- Dynamic Selected Area -->
+        <div id="selectedTbeBadge" class="selected-tbe-badge" style="display: none;">
+            <span>Current Selected TBE: <strong id="tbeNameText"></strong></span>
+            <button class="clear-selection-btn" onclick="clearSelectedTbe()" title="Clear Selection">×</button>
+        </div>
     </div>
 
-    <div id="loadingText" class="loading">Fetching pending contracts from Excel...</div>
+    <!-- Loader -->
+    <div id="loader" class="loader-container">
+        <div class="spinner"></div>
+        <p style="color: var(--text-secondary); font-size: 0.95rem;">Fetching records directly from Excel...</p>
+    </div>
 
-    <table id="contractTable" style="display:none;">
-        <thead>
-            <tr>
-                <th>Contract No</th>
-                <th>Credit ID</th>
-                <th>TBE Name</th>
-                <th>Courier POD Number</th>
-                <th>Courier Dispatch Date</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody id="tableBody">
-            </tbody>
-    </table>
+    <!-- Empty/Guide State -->
+    <div id="emptyState" class="empty-view-card">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+        </svg>
+        <h3 style="margin-top:0; color: var(--deere-dark);">Search TBE Name to Load Pending Dispatches</h3>
+        <p style="max-width: 500px; margin: 0 auto; line-height: 1.5; color: #64748b;">No items are loaded yet. Please use the search bar above to look up a TBE name. Only unassigned courier profiles matching your selection will load.</p>
+    </div>
+
+    <!-- Data Table Container -->
+    <div id="tableCard" class="table-card">
+        <div class="table-header-bar">
+            <div class="table-header-title">Unassigned Courier Details</div>
+            <div style="font-size: 0.85rem; color: #64748b;" id="matchingCountText">0 entries matching search</div>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 12%">Contract No</th>
+                        <th style="width: 12%">Credit ID</th>
+                        <th style="width: 20%">Customer Name</th>
+                        <th style="width: 18%">Courier Name</th>
+                        <th style="width: 18%">Courier POD Number</th>
+                        <th style="width: 12%">Dispatch Date</th>
+                        <th style="width: 8%; text-align: center;">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- Dynamic Rows Insertion -->
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
+<!-- Custom Toast Message Hub -->
+<div id="toastContainer" class="toast-container"></div>
+
 <script>
-    // ⚠️ PASTE YOUR POWER AUTOMATE ENDPOINTS HERE
+    // Power Automate Gateway URLs
     const GET_FLOW_URL = "https://default39b03722b836496a85ec850f0957ca.6b.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/a0f718186c9c4da1919dc34dd1be6b0c/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=LcGTdcoBZoweGT0tE6D3MM4QyQ57b6U5j-IAatd6y64";
     const POST_FLOW_URL = "https://default39b03722b836496a85ec850f0957ca.6b.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/13e5bd1b6ead4fca9d2230cdc783ed4f/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=zElUk02GY3U3k8_TN3vaN0OI0lEUc2eOPiMsBAJ-5js";
 
     let allRows = [];
+    let selectedTbe = "";
 
-    // 1. Fetch data from Flow 1
+    // 1. Fetch data on initialization
     async function fetchData() {
-        document.getElementById('loadingText').style.display = 'block';
-        document.getElementById('contractTable').style.display = 'none';
-        
+        showLoader(true);
+        hideTable();
         try {
             const response = await fetch(GET_FLOW_URL);
             allRows = await response.json();
+            showLoader(false);
             
-            populateTbeDropdown();
-            renderTable(allRows);
-            
-            document.getElementById('loadingText').style.display = 'none';
-            document.getElementById('contractTable').style.display = 'table';
+            // If we have a selected TBE, re-render with the freshly fetched list
+            if (selectedTbe) {
+                renderFilteredTable();
+            } else {
+                document.getElementById('emptyState').style.display = 'block';
+            }
         } catch (error) {
-            alert('Error fetching data. Check your Power Automate Flow 1.');
+            showLoader(false);
+            showToast("Failed to retrieve connection parameters from Flow 1.", "error");
             console.error(error);
         }
     }
 
-    // 2. Extract unique TBE Names to build the filter dropdown dynamically
-    function populateTbeDropdown() {
-        const dropdown = document.getElementById('tbeFilter');
-        dropdown.innerHTML = '<option value="">-- Select TBE Name --</option>';
+    // Dynamic Helper to find Excel properties ignoring casing, spaces, or formatting modifications
+    function getFlexibleValue(row, possibleKeys, fallbackValue = 'N/A') {
+        if (!row) return fallbackValue;
         
-        // Extract unique TBE names, filtering out empty values
-        const uniqueTbes = [...new Set(allRows.map(row => row.TBEName).filter(Boolean))];
+        // 1. Try exact match from list
+        for (const key of possibleKeys) {
+            if (row[key] !== undefined && row[key] !== null && row[key].toString().trim() !== '') {
+                return row[key].toString().trim();
+            }
+        }
         
-        uniqueTbes.sort().forEach(tbe => {
-            const opt = document.createElement('option');
-            opt.value = tbe;
-            opt.textContent = tbe;
-            dropdown.appendChild(opt);
-        });
+        // 2. Try normalized character match (lowercase, stripping spaces/underscores/special chars)
+        const normalizedTargets = possibleKeys.map(k => k.toLowerCase().replace(/[^a-z0-9]/g, ''));
         
-        dropdown.disabled = false;
+        for (const actualKey of Object.keys(row)) {
+            const normalizedActual = actualKey.toLowerCase().replace(/[^a-z0-9]/g, '');
+            const targetIndex = normalizedTargets.indexOf(normalizedActual);
+            
+            if (targetIndex !== -1) {
+                if (row[actualKey] !== undefined && row[actualKey] !== null && row[actualKey].toString().trim() !== '') {
+                    return row[actualKey].toString().trim();
+                }
+            }
+        }
+        
+        return fallbackValue;
     }
 
-    // 3. Render filtered rows to table
-    function renderTable(data) {
+    // Helper to search and normalize TBE Agents consistently
+    function getTbeName(row) {
+        return getFlexibleValue(row, ['TBEName', 'TBE Name', 'TBE_Name', 'Tbe'], '');
+    }
+
+    // 2. Fuzzy Autocomplete Search Implementation
+    const searchInput = document.getElementById('fuzzySearchInput');
+    const suggestionsDropdown = document.getElementById('suggestionsDropdown');
+
+    searchInput.addEventListener('input', function() {
+        const query = this.value.trim().toLowerCase();
+        if (!query) {
+            suggestionsDropdown.style.display = 'none';
+            return;
+        }
+
+        // Extract unique TBE names from fetched dataset
+        const uniqueTbes = [...new Set(allRows.map(row => getTbeName(row)).filter(Boolean))];
+        
+        // Match query anywhere inside name (Fuzzy Match logic)
+        const matches = uniqueTbes.filter(tbe => tbe.toLowerCase().includes(query)).sort();
+
+        renderSuggestions(matches);
+    });
+
+    // Handle clicking away from autocomplete dropdown
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.fuzzy-input-container')) {
+            suggestionsDropdown.style.display = 'none';
+        }
+    });
+
+    function renderSuggestions(matches) {
+        suggestionsDropdown.innerHTML = '';
+        if (matches.length === 0) {
+            suggestionsDropdown.innerHTML = '<div class="no-results">No matching TBE Agents found</div>';
+        } else {
+            matches.forEach(match => {
+                const item = document.createElement('div');
+                item.className = 'suggestion-item';
+                item.textContent = match;
+                item.onclick = () => selectTbe(match);
+                suggestionsDropdown.appendChild(item);
+            });
+        }
+        suggestionsDropdown.style.display = 'block';
+    }
+
+    function selectTbe(name) {
+        selectedTbe = name;
+        searchInput.value = name;
+        suggestionsDropdown.style.display = 'none';
+
+        // Update selected badge
+        document.getElementById('tbeNameText').textContent = name;
+        document.getElementById('selectedTbeBadge').style.display = 'inline-flex';
+        
+        renderFilteredTable();
+    }
+
+    function clearSelectedTbe() {
+        selectedTbe = "";
+        searchInput.value = "";
+        document.getElementById('selectedTbeBadge').style.display = 'none';
+        hideTable();
+        document.getElementById('emptyState').style.display = 'block';
+    }
+
+    // 3. Render matching records
+    function renderFilteredTable() {
+        document.getElementById('emptyState').style.display = 'none';
         const tbody = document.getElementById('tableBody');
         tbody.innerHTML = '';
 
-        if(data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No pending entries found.</td></tr>';
+        // Filter master row dataset by matching selected TBE Agent
+        const filtered = allRows.filter(row => getTbeName(row) === selectedTbe);
+        document.getElementById('matchingCountText').textContent = `${filtered.length} entries matching search`;
+
+        if (filtered.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color: var(--text-secondary); padding: 30px;">No pending contracts requiring updates for this TBE.</td></tr>';
+            document.getElementById('tableCard').style.display = 'block';
             return;
         }
 
-        data.forEach((row, index) => {
+        filtered.forEach((row, idx) => {
             const tr = document.createElement('tr');
             
-            // Adjust property names if your exact Excel column casing differs
+            // Map keys flexibly to capture Excel/OData transformations securely
+            const customerName = getFlexibleValue(row, ['CustomerName', 'Customer Name', 'Customer_Name', 'Customer_x0020_Name', 'Customer']);
+            const contractNo = getFlexibleValue(row, ['ContractNo', 'Contract No', 'Contract_No', 'Contract_x0020_No']);
+            const creditId = getFlexibleValue(row, ['CreditID', 'Credit ID', 'Credit_ID', 'Credit_x0020_ID']);
+
             tr.innerHTML = `
-                <td>${row.ContractNo || ''}</td>
-                <td><strong>${row.CreditID || ''}</strong></td>
-                <td>${row.TBEName || ''}</td>
-                <td><input type="text" id="pod_${index}" placeholder="Enter POD No."></td>
-                <td><input type="date" id="date_${index}"></td>
-                <td><button onclick="submitRow('${row.CreditID}', ${index}, this)">Update</button></td>
+                <td style="font-weight: 500;">${contractNo}</td>
+                <td><span style="font-weight: 600; font-family: monospace; font-size: 0.95rem;">${creditId}</span></td>
+                <td style="color: var(--deere-green); font-weight: 500;">${customerName}</td>
+                <td>
+                    <input type="text" id="courier_${idx}" class="table-input" placeholder="e.g. Blue Dart" oninput="checkInputValidity(${idx})">
+                </td>
+                <td>
+                    <input type="text" id="pod_${idx}" class="table-input" placeholder="Enter POD No." oninput="checkInputValidity(${idx})">
+                </td>
+                <td>
+                    <input type="date" id="date_${idx}" class="table-input" onchange="checkInputValidity(${idx})">
+                </td>
+                <td style="text-align: center;">
+                    <button id="btn_${idx}" class="btn-update" onclick="submitSingleRow('${creditId}', ${idx})" disabled>Update</button>
+                </td>
             `;
             tbody.appendChild(tr);
         });
+
+        document.getElementById('tableCard').style.display = 'block';
     }
 
-    // 4. Handle frontend filtering on dropdown selection
-    function filterData() {
-        const selectedTbe = document.getElementById('tbeFilter').value;
-        if (!selectedTbe) {
-            renderTable(allRows);
+    // 4. Client Side Form Validator
+    // Button activates ONLY if all three inputs (Courier, POD, and Date) are non-empty
+    function checkInputValidity(index) {
+        const courier = document.getElementById(`courier_${index}`).value.trim();
+        const pod = document.getElementById(`pod_${index}`).value.trim();
+        const date = document.getElementById(`date_${index}`).value;
+        const button = document.getElementById(`btn_${index}`);
+
+        if (courier !== "" && pod !== "" && date !== "") {
+            button.removeAttribute('disabled');
+            button.classList.add('active');
         } else {
-            const filtered = allRows.filter(row => row.TBEName === selectedTbe);
-            renderTable(filtered);
+            button.setAttribute('disabled', 'true');
+            button.classList.remove('active');
         }
     }
 
-    // 5. Submit individual row modifications back to Flow 2
-    async function submitRow(creditId, index, buttonElement) {
-        const podInput = document.getElementById(`pod_${index}`).value.trim();
-        const dateInput = document.getElementById(`date_${index}`).value;
+    // 5. Submit individual row details back to Flow 2 (POST)
+    async function submitSingleRow(creditId, index) {
+        const courierVal = document.getElementById(`courier_${index}`).value.trim();
+        const podVal = document.getElementById(`pod_${index}`).value.trim();
+        const dateVal = document.getElementById(`date_${index}`).value;
+        const button = document.getElementById(`btn_${index}`);
 
-        if (!podInput || !dateInput) {
-            alert("Please fill out both the POD Number and Dispatch Date before updating.");
+        // Safety fallback double check
+        if (!courierVal || !podVal || !dateVal) {
+            showToast("Required details are missing. Please complete all fields.", "error");
             return;
         }
 
-        // Lock button during operation
-        buttonElement.disabled = true;
-        buttonElement.textContent = "Saving...";
+        // Temporarily lock action inputs
+        button.disabled = true;
+        button.textContent = "Writing...";
 
         const payload = {
             CreditID: creditId,
-            PODNumber: podInput,
-            DispatchDate: dateInput
+            CourierName: courierVal,
+            PODNumber: podVal,
+            DispatchDate: dateVal
         };
 
         try {
@@ -162,22 +719,64 @@
             });
 
             if (response.ok) {
-                alert(`Credit ID ${creditId} successfully updated!`);
-                // Refresh data to pull the newly shortened list
-                fetchData();
+                showToast(`Credit ID ${creditId} successfully updated!`, "success");
+                // Synchronously query Excel and reload layout cleanly
+                await fetchData();
             } else {
-                alert("Failed to update row. Check Flow 2 configurations.");
-                buttonElement.disabled = false;
-                buttonElement.textContent = "Update";
+                showToast("Server rejected changes. Ensure Flow 2 maps 'CourierName' to your Excel sheet.", "error");
+                button.disabled = false;
+                button.textContent = "Update";
             }
         } catch (error) {
-            alert("Network error occurred while updating.");
-            buttonElement.disabled = false;
-            buttonElement.textContent = "Update";
+            showToast("Connection pipeline broke down while sending request.", "error");
+            button.disabled = false;
+            button.textContent = "Update";
+            console.error(error);
         }
     }
 
-    // Run automatically on load
+    // UI Helper Functions
+    function showLoader(visible) {
+        document.getElementById('loader').style.display = visible ? 'block' : 'none';
+    }
+
+    function hideTable() {
+        document.getElementById('tableCard').style.display = 'none';
+        document.getElementById('emptyState').style.display = 'none';
+    }
+
+    // Custom non-blocking Toast System
+    function showToast(message, type = 'success') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        
+        // Add dynamic visual icons to toast
+        let iconSvg = '';
+        if (type === 'success') {
+            iconSvg = `<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+        } else {
+            iconSvg = `<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`;
+        }
+
+        toast.innerHTML = `
+            ${iconSvg}
+            <span>${message}</span>
+        `;
+        
+        container.appendChild(toast);
+        
+        // Render slide in transition
+        setTimeout(() => toast.classList.add('show'), 10);
+
+        // Slide out and destroy elements
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, 4000);
+    }
+
+    // Run fetching engine automatically on load
     window.onload = fetchData;
 </script>
 
