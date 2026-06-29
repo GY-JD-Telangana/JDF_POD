@@ -575,7 +575,7 @@
     function renderSuggestions(matches) {
         suggestionsDropdown.innerHTML = '';
         if (matches.length === 0) {
-            suggestionsDropdown.innerHTML = '<div class="no-results">No matching TBE Agents found</div>';
+            suggestionsDropdown.innerHTML = '<div class="no-results">No matching TBE found</div>';
         } else {
             matches.forEach(match => {
                 const item = document.createElement('div');
