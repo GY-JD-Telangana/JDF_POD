@@ -498,7 +498,7 @@
 <div id="toastContainer" class="toast-container"></div>
 
 <script>
-    // Power Automate Gateway URLs
+   // Power Automate Gateway URLs
     const GET_FLOW_URL = "https://default39b03722b836496a85ec850f0957ca.6b.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/a0f718186c9c4da1919dc34dd1be6b0c/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=LcGTdcoBZoweGT0tE6D3MM4QyQ57b6U5j-IAatd6y64";
     const POST_FLOW_URL = "https://default39b03722b836496a85ec850f0957ca.6b.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/13e5bd1b6ead4fca9d2230cdc783ed4f/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=zElUk02GY3U3k8_TN3vaN0OI0lEUc2eOPiMsBAJ-5js";
 
@@ -514,7 +514,6 @@
             allRows = await response.json();
             showLoader(false);
             
-            // If we have a selected TBE, re-render with the freshly fetched list
             if (selectedTbe) {
                 renderFilteredTable();
             } else {
@@ -530,32 +529,24 @@
     // Dynamic Helper to find Excel properties ignoring casing, spaces, or formatting modifications
     function getFlexibleValue(row, possibleKeys, fallbackValue = 'N/A') {
         if (!row) return fallbackValue;
-        
-        // 1. Try exact match from list
         for (const key of possibleKeys) {
             if (row[key] !== undefined && row[key] !== null && row[key].toString().trim() !== '') {
                 return row[key].toString().trim();
             }
         }
-        
-        // 2. Try normalized character match (lowercase, stripping spaces/underscores/special chars)
         const normalizedTargets = possibleKeys.map(k => k.toLowerCase().replace(/[^a-z0-9]/g, ''));
-        
         for (const actualKey of Object.keys(row)) {
             const normalizedActual = actualKey.toLowerCase().replace(/[^a-z0-9]/g, '');
             const targetIndex = normalizedTargets.indexOf(normalizedActual);
-            
             if (targetIndex !== -1) {
                 if (row[actualKey] !== undefined && row[actualKey] !== null && row[actualKey].toString().trim() !== '') {
                     return row[actualKey].toString().trim();
                 }
             }
         }
-        
         return fallbackValue;
     }
 
-    // Helper to search and normalize TBE Agents consistently
     function getTbeName(row) {
         return getFlexibleValue(row, ['TBEName', 'TBE Name', 'TBE_Name', 'Tbe'], '');
     }
@@ -570,17 +561,11 @@
             suggestionsDropdown.style.display = 'none';
             return;
         }
-
-        // Extract unique TBE names from fetched dataset
         const uniqueTbes = [...new Set(allRows.map(row => getTbeName(row)).filter(Boolean))];
-        
-        // Match query anywhere inside name (Fuzzy Match logic)
         const matches = uniqueTbes.filter(tbe => tbe.toLowerCase().includes(query)).sort();
-
         renderSuggestions(matches);
     });
 
-    // Handle clicking away from autocomplete dropdown
     document.addEventListener('click', (e) => {
         if (!e.target.closest('.fuzzy-input-container')) {
             suggestionsDropdown.style.display = 'none';
@@ -607,11 +592,8 @@
         selectedTbe = name;
         searchInput.value = name;
         suggestionsDropdown.style.display = 'none';
-
-        // Update selected badge
         document.getElementById('tbeNameText').textContent = name;
         document.getElementById('selectedTbeBadge').style.display = 'inline-flex';
-        
         renderFilteredTable();
     }
 
@@ -629,7 +611,6 @@
         const tbody = document.getElementById('tableBody');
         tbody.innerHTML = '';
 
-        // Filter master row dataset by matching selected TBE Agent
         const filtered = allRows.filter(row => getTbeName(row) === selectedTbe);
         document.getElementById('matchingCountText').textContent = `${filtered.length} entries matching search`;
 
@@ -641,8 +622,6 @@
 
         filtered.forEach((row, idx) => {
             const tr = document.createElement('tr');
-            
-            // Map keys flexibly to capture Excel/OData transformations securely
             const customerName = getFlexibleValue(row, ['CustomerName', 'Customer Name', 'Customer_Name', 'Customer_x0020_Name', 'Customer']);
             const contractNo = getFlexibleValue(row, ['ContractNo', 'Contract No', 'Contract_No', 'Contract_x0020_No']);
             const creditId = getFlexibleValue(row, ['CreditID', 'Credit ID', 'Credit_ID', 'Credit_x0020_ID']);
@@ -651,15 +630,9 @@
                 <td style="font-weight: 500;">${contractNo}</td>
                 <td><span style="font-weight: 600; font-family: monospace; font-size: 0.95rem;">${creditId}</span></td>
                 <td style="color: var(--deere-green); font-weight: 500;">${customerName}</td>
-                <td>
-                    <input type="text" id="courier_${idx}" class="table-input" placeholder="e.g. Blue Dart" oninput="checkInputValidity(${idx})">
-                </td>
-                <td>
-                    <input type="text" id="pod_${idx}" class="table-input" placeholder="Enter POD No." oninput="checkInputValidity(${idx})">
-                </td>
-                <td>
-                    <input type="date" id="date_${idx}" class="table-input" onchange="checkInputValidity(${idx})">
-                </td>
+                <td><input type="text" id="courier_${idx}" class="table-input" placeholder="e.g. Blue Dart" oninput="checkInputValidity(${idx})"></td>
+                <td><input type="text" id="pod_${idx}" class="table-input" placeholder="Enter POD No." oninput="checkInputValidity(${idx})"></td>
+                <td><input type="date" id="date_${idx}" class="table-input" onchange="checkInputValidity(${idx})"></td>
                 <td style="text-align: center;">
                     <button id="btn_${idx}" class="btn-update" onclick="submitSingleRow('${creditId}', ${idx})" disabled>Update</button>
                 </td>
@@ -670,8 +643,6 @@
         document.getElementById('tableCard').style.display = 'block';
     }
 
-    // 4. Client Side Form Validator
-    // Button activates ONLY if all three inputs (Courier, POD, and Date) are non-empty
     function checkInputValidity(index) {
         const courier = document.getElementById(`courier_${index}`).value.trim();
         const pod = document.getElementById(`pod_${index}`).value.trim();
@@ -687,20 +658,18 @@
         }
     }
 
-    // 5. Submit individual row details back to Flow 2 (POST)
+    // 5. Submit row details with instant client-side UI filter removal
     async function submitSingleRow(creditId, index) {
         const courierVal = document.getElementById(`courier_${index}`).value.trim();
         const podVal = document.getElementById(`pod_${index}`).value.trim();
         const dateVal = document.getElementById(`date_${index}`).value;
         const button = document.getElementById(`btn_${index}`);
 
-        // Safety fallback double check
         if (!courierVal || !podVal || !dateVal) {
             showToast("Required details are missing. Please complete all fields.", "error");
             return;
         }
 
-        // Temporarily lock action inputs
         button.disabled = true;
         button.textContent = "Writing...";
 
@@ -720,10 +689,18 @@
 
             if (response.ok) {
                 showToast(`Credit ID ${creditId} successfully updated!`, "success");
-                // Synchronously query Excel and reload layout cleanly
-                await fetchData();
+                
+                // FIX: Local Optimistic Sync Update
+                // Remove the row from the local memory array immediately so it vanishes from screen instantly
+                allRows = allRows.filter(row => {
+                    const rowCreditId = getFlexibleValue(row, ['CreditID', 'Credit ID', 'Credit_ID', 'Credit_x0020_ID']);
+                    return rowCreditId !== creditId;
+                });
+                
+                // Re-render layout locally without triggering a premature backend fetch
+                renderFilteredTable();
             } else {
-                showToast("Server rejected changes. Ensure Flow 2 maps 'CourierName' to your Excel sheet.", "error");
+                showToast("Server rejected changes. Ensure Flow 2 maps columns correctly.", "error");
                 button.disabled = false;
                 button.textContent = "Update";
             }
@@ -735,7 +712,6 @@
         }
     }
 
-    // UI Helper Functions
     function showLoader(visible) {
         document.getElementById('loader').style.display = visible ? 'block' : 'none';
     }
@@ -745,38 +721,23 @@
         document.getElementById('emptyState').style.display = 'none';
     }
 
-    // Custom non-blocking Toast System
     function showToast(message, type = 'success') {
         const container = document.getElementById('toastContainer');
         const toast = document.createElement('div');
         toast.className = `toast ${type}`;
-        
-        // Add dynamic visual icons to toast
-        let iconSvg = '';
-        if (type === 'success') {
-            iconSvg = `<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
-        } else {
-            iconSvg = `<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`;
-        }
+        let iconSvg = type === 'success' 
+            ? `<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`
+            : `<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`;
 
-        toast.innerHTML = `
-            ${iconSvg}
-            <span>${message}</span>
-        `;
-        
+        toast.innerHTML = `${iconSvg}<span>${message}</span>`;
         container.appendChild(toast);
-        
-        // Render slide in transition
         setTimeout(() => toast.classList.add('show'), 10);
-
-        // Slide out and destroy elements
         setTimeout(() => {
             toast.classList.remove('show');
             setTimeout(() => toast.remove(), 300);
         }, 4000);
     }
 
-    // Run fetching engine automatically on load
     window.onload = fetchData;
 </script>
 
