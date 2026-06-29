@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Courier POD Update Portal</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 30px; background-color: #f5f7fb; color: #333; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        h2 { margin-top: 0; color: #1e3a8a; }
+        .filter-section { background: #e0e7ff; padding: 15px; border-radius: 6px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; }
+        select { padding: 8px 12px; border-radius: 4px; border: 1px solid #cbd5e1; font-size: 16px; min-width: 200px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+        th { background-color: #0f172a; color: white; }
+        tr:hover { background-color: #f8fafc; }
+        input[type="text"], input[type="date"] { padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 14px; }
+        button { background-color: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        button:hover { background-color: #1d4ed8; }
+        button:disabled { background-color: #94a3b8; cursor: not-allowed; }
+        .loading { font-style: italic; color: #64748b; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Courier Dispatch Update Portal</h2>
+    
+    <div class="filter-section">
+        <label for="tbeFilter"><strong>Filter by TBE Name:</strong></label>
+        <select id="tbeFilter" onchange="filterData()" disabled>
+            <option value="">Loading TBE Names...</option>
+        </select>
+        <button onclick="fetchData()">🔄 Refresh Data</button>
+    </div>
+
+    <div id="loadingText" class="loading">Fetching pending contracts from Excel...</div>
+
+    <table id="contractTable" style="display:none;">
+        <thead>
+            <tr>
+                <th>Contract No</th>
+                <th>Credit ID</th>
+                <th>TBE Name</th>
+                <th>Courier POD Number</th>
+                <th>Courier Dispatch Date</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody">
+            </tbody>
+    </table>
+</div>
+
+<script>
+    // ⚠️ PASTE YOUR POWER AUTOMATE ENDPOINTS HERE
+    const GET_FLOW_URL = "https://default39b03722b836496a85ec850f0957ca.6b.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/a0f718186c9c4da1919dc34dd1be6b0c/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=LcGTdcoBZoweGT0tE6D3MM4QyQ57b6U5j-IAatd6y64";
+    const POST_FLOW_URL = "https://default39b03722b836496a85ec850f0957ca.6b.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/13e5bd1b6ead4fca9d2230cdc783ed4f/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=zElUk02GY3U3k8_TN3vaN0OI0lEUc2eOPiMsBAJ-5js";
+
+    let allRows = [];
+
+    // 1. Fetch data from Flow 1
+    async function fetchData() {
+        document.getElementById('loadingText').style.display = 'block';
+        document.getElementById('contractTable').style.display = 'none';
+        
+        try {
+            const response = await fetch(GET_FLOW_URL);
+            allRows = await response.json();
+            
+            populateTbeDropdown();
+            renderTable(allRows);
+            
+            document.getElementById('loadingText').style.display = 'none';
+            document.getElementById('contractTable').style.display = 'table';
+        } catch (error) {
+            alert('Error fetching data. Check your Power Automate Flow 1.');
+            console.error(error);
+        }
+    }
+
+    // 2. Extract unique TBE Names to build the filter dropdown dynamically
+    function populateTbeDropdown() {
+        const dropdown = document.getElementById('tbeFilter');
+        dropdown.innerHTML = '<option value="">-- Select TBE Name --</option>';
+        
+        // Extract unique TBE names, filtering out empty values
+        const uniqueTbes = [...new Set(allRows.map(row => row.TBEName).filter(Boolean))];
+        
+        uniqueTbes.sort().forEach(tbe => {
+            const opt = document.createElement('option');
+            opt.value = tbe;
+            opt.textContent = tbe;
+            dropdown.appendChild(opt);
+        });
+        
+        dropdown.disabled = false;
+    }
+
+    // 3. Render filtered rows to table
+    function renderTable(data) {
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+
+        if(data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No pending entries found.</td></tr>';
+            return;
+        }
+
+        data.forEach((row, index) => {
+            const tr = document.createElement('tr');
+            
+            // Adjust property names if your exact Excel column casing differs
+            tr.innerHTML = `
+                <td>${row.ContractNo || ''}</td>
+                <td><strong>${row.CreditID || ''}</strong></td>
+                <td>${row.TBEName || ''}</td>
+                <td><input type="text" id="pod_${index}" placeholder="Enter POD No."></td>
+                <td><input type="date" id="date_${index}"></td>
+                <td><button onclick="submitRow('${row.CreditID}', ${index}, this)">Update</button></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // 4. Handle frontend filtering on dropdown selection
+    function filterData() {
+        const selectedTbe = document.getElementById('tbeFilter').value;
+        if (!selectedTbe) {
+            renderTable(allRows);
+        } else {
+            const filtered = allRows.filter(row => row.TBEName === selectedTbe);
+            renderTable(filtered);
+        }
+    }
+
+    // 5. Submit individual row modifications back to Flow 2
+    async function submitRow(creditId, index, buttonElement) {
+        const podInput = document.getElementById(`pod_${index}`).value.trim();
+        const dateInput = document.getElementById(`date_${index}`).value;
+
+        if (!podInput || !dateInput) {
+            alert("Please fill out both the POD Number and Dispatch Date before updating.");
+            return;
+        }
+
+        // Lock button during operation
+        buttonElement.disabled = true;
+        buttonElement.textContent = "Saving...";
+
+        const payload = {
+            CreditID: creditId,
+            PODNumber: podInput,
+            DispatchDate: dateInput
+        };
+
+        try {
+            const response = await fetch(POST_FLOW_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.ok) {
+                alert(`Credit ID ${creditId} successfully updated!`);
+                // Refresh data to pull the newly shortened list
+                fetchData();
+            } else {
+                alert("Failed to update row. Check Flow 2 configurations.");
+                buttonElement.disabled = false;
+                buttonElement.textContent = "Update";
+            }
+        } catch (error) {
+            alert("Network error occurred while updating.");
+            buttonElement.disabled = false;
+            buttonElement.textContent = "Update";
+        }
+    }
+
+    // Run automatically on load
+    window.onload = fetchData;
+</script>
+
+</body>
+</html>
